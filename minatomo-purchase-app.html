@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>みなとも お買い物</title>
+<style>
+  /* ── 設定可能なトークン ── */
+  :root {
+    --green:   #3a8c5c;
+    --green-l: #e8f5ee;
+    --green-m: #c2e8d0;
+    --amber:   #e8963a;
+    --amber-l: #fff5e8;
+    --red:     #d94f4f;
+    --bg:      #f7f5f0;
+    --surface: #ffffff;
+    --text:    #1e2c24;
+    --muted:   #7a8c82;
+    --border:  #d8e4dc;
+    --radius:  20px;
+    --shadow:  0 4px 24px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 20px 40px;
+  }
+
+  /* ── ヘッダー ── */
+  .header {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .logo {
+    width: 52px; height: 52px;
+    background: var(--green);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .logo-text { line-height: 1.1; }
+  .logo-text .brand { font-size: 22px; font-weight: 700; color: var(--green); }
+  .logo-text .sub   { font-size: 14px; color: var(--muted); }
+
+  /* ── カード ── */
+  .card {
+    width: 100%; max-width: 720px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 36px 32px;
+  }
+
+  /* ── 画面共通 ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  h2 {
+    font-size: 30px; font-weight: 700;
+    color: var(--text); margin-bottom: 8px;
+  }
+  .lead {
+    font-size: 19px; color: var(--muted); margin-bottom: 32px;
+  }
+
+  /* ── テンキー ── */
+  .id-display {
+    background: var(--green-l);
+    border: 2px solid var(--green-m);
+    border-radius: 14px;
+    padding: 20px 24px;
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: 10px;
+    color: var(--text);
+    min-height: 90px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .id-display .placeholder {
+    font-size: 22px; font-weight: 400;
+    color: var(--muted); letter-spacing: 2px;
+  }
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .numpad button {
+    height: 84px;
+    border: none;
+    border-radius: 16px;
+    font-size: 32px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .1s, box-shadow .1s;
+    user-select: none;
+  }
+  .numpad button:active { transform: scale(.95); }
+  .numpad .num {
+    background: var(--surface);
+    color: var(--text);
+    border: 2px solid var(--border);
+    box-shadow: 0 3px 0 var(--border);
+  }
+  .numpad .num:active { box-shadow: none; transform: translateY(3px) scale(.97); }
+  .numpad .del {
+    background: #fff0f0; color: var(--red); border: 2px solid #ffd0d0;
+    font-size: 26px;
+  }
+  .numpad .blank { background: transparent; border: none; box-shadow: none; cursor: default; }
+
+  /* ── 検索ボタン ── */
+  .btn-primary {
+    width: 100%;
+    margin-top: 24px;
+    padding: 22px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #2a6642;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn-primary:active { transform: translateY(4px); box-shadow: 0 1px 0 #2a6642; }
+  .btn-primary:disabled { background: var(--muted); box-shadow: none; cursor: not-allowed; }
+
+  .btn-secondary {
+    width: 100%;
+    margin-top: 16px;
+    padding: 18px;
+    background: var(--surface);
+    color: var(--muted);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-secondary:active { background: var(--bg); }
+
+  /* ── 名前確認 ── */
+  .name-box {
+    background: var(--green-l);
+    border: 2px solid var(--green);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .name-box .name-label { font-size: 18px; color: var(--muted); margin-bottom: 6px; }
+  .name-box .name-val   { font-size: 42px; font-weight: 700; color: var(--text); }
+  .name-box .id-val     { font-size: 16px; color: var(--muted); margin-top: 4px; }
+
+  /* ── 商品選択 ── */
+  .products {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .product-btn {
+    background: var(--surface);
+    border: 3px solid var(--border);
+    border-radius: 18px;
+    padding: 20px 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .15s, background .15s, transform .1s;
+    position: relative;
+  }
+  .product-btn:active { transform: scale(.97); }
+  .product-btn.selected {
+    border-color: var(--green);
+    background: var(--green-l);
+  }
+  .product-btn .p-icon  { font-size: 36px; margin-bottom: 8px; }
+  .product-btn .p-name  { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; line-height: 1.3; }
+  .product-btn .p-price { font-size: 24px; font-weight: 700; color: var(--green); }
+  .product-btn .qty-badge {
+    position: absolute; top: -10px; right: -10px;
+    background: var(--amber);
+    color: #fff;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+    display: none;
+  }
+  .product-btn.selected .qty-badge { display: flex; }
+
+  /* カート */
+  .cart-summary {
+    background: var(--amber-l);
+    border: 2px solid #f0c080;
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cart-summary .cart-label { font-size: 18px; color: var(--muted); }
+  .cart-summary .cart-total { font-size: 36px; font-weight: 700; color: var(--amber); }
+
+  /* ── 確認画面 ── */
+  .confirm-list {
+    list-style: none;
+    margin-bottom: 24px;
+  }
+  .confirm-list li {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 20px;
+  }
+  .confirm-list li:last-child { border-bottom: none; }
+  .confirm-list .item-name { color: var(--text); font-weight: 600; }
+  .confirm-list .item-price { color: var(--green); font-weight: 700; }
+
+  .total-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 24px;
+    background: var(--green-l);
+    border-radius: 14px;
+    margin-bottom: 28px;
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .total-row .total-val { color: var(--green); font-size: 36px; }
+
+  .billing-note {
+    text-align: center;
+    font-size: 16px;
+    color: var(--muted);
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    margin-bottom: 24px;
+  }
+
+  /* ── 完了画面 ── */
+  .success-icon {
+    font-size: 80px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .success-msg {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .success-sub {
+    text-align: center;
+    font-size: 18px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  /* ── エラー ── */
+  .error-box {
+    background: #fff0f0;
+    border: 2px solid #ffb0b0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 17px;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* ── ローディング ── */
+  .loading {
+    display: inline-block;
+    width: 28px; height: 28px;
+    border: 4px solid #fff3;
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── ステッパー ── */
+  .stepper {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 28px;
+  }
+  .step {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700;
+  }
+  .step.done { background: var(--green); color: #fff; }
+  .step.active { background: var(--green-l); color: var(--green); border: 2px solid var(--green); }
+  .step.idle { background: var(--bg); color: var(--muted); }
+  .step-line { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+  .step-line.done { background: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ===== KINTONE 設定 ===== -->
+<script>
+// ▼▼▼ ここを環境に合わせて変更してください ▼▼▼
+const KINTONE_CONFIG = {
+  subdomain:         'minatomo',   // ※セキュアアクセスの場合は 'minatomo.s' に変更
+  userAppId:         '12',         // 利用者情報アプリ
+  purchaseAppId:     '232',        // 購入履歴アプリ
+  apiToken_user:     'sGFWeMyl6TWcLA27YzCXaUDiUCG2rTCvDJdzbZYD',     // ← 利用者情報アプリのAPIトークン（閲覧のみ）を貼る
+  apiToken_purchase: '8EdKFRlsaxclwsGxzyTbQh3nB4oLBA0YGiw6YyTo', // ← 購入履歴アプリのAPIトークン（追加のみ）を貼る
+  userIdField:       'ID',         // 利用者IDフィールドコード
+  userNameField:     '氏名',       // 利用者名フィールドコード
+  userIdIsNumber:    true,         // IDが数値型のためクォートなしで検索
+};
+// ▲▲▲ 設定ここまで ▲▲▲
+
+const PRODUCTS = [
+  { id:'p1', name:'リハたいむゼリー', price:250, icon:'🍮' },
+  { id:'p2', name:'冷凍食品 ¥100',  price:100, icon:'🧊' },
+  { id:'p3', name:'冷凍食品 ¥200',  price:200, icon:'🧊' },
+  { id:'p4', name:'冷凍食品 ¥300',  price:300, icon:'🧊' },
+  { id:'p5', name:'冷凍食品 ¥400',  price:400, icon:'🧊' },
+  { id:'p6', name:'冷凍食品 ¥500',  price:500, icon:'🧊' },
+];
+
+// ---- State ----
+let state = {
+  screen: 'id',     // id | name-confirm | select | confirm | done
+  inputId: '',
+  userName: '',
+  kintoneRecordId: null,
+  cart: {},         // { p1: 2, p3: 1, ... }
+};
+
+function isDemoMode() {
+  return KINTONE_CONFIG.apiToken_user === 'YOUR_USER_APP_TOKEN';
+}
+
+// ============================================================
+// kintone API
+// ============================================================
+async function fetchUserByID(userId) {
+  if (isDemoMode()) {
+    // デモ用モックデータ
+    await new Promise(r => setTimeout(r, 800));
+    const demoUsers = { '0001':'山田 花子', '0002':'田中 次郎', '1234':'鈴木 三郎' };
+    const name = demoUsers[userId];
+    if (!name) throw new Error('利用者が見つかりませんでした');
+    return { name, recordId: userId };
+  }
+
+  const queryVal = KINTONE_CONFIG.userIdIsNumber ? userId : `"${userId}"`;
+  const kintoneHost = `${KINTONE_CONFIG.subdomain}.cybozu.com`;
+  const url = `https://${kintoneHost}/k/v1/records.json`
+            + `?app=${KINTONE_CONFIG.userAppId}`
+            + `&query=${KINTONE_CONFIG.userIdField}=${queryVal}`;
+  const res = await fetch(url, {
+    headers: { 'X-Cybozu-API-Token': KINTONE_CONFIG.apiToken_user }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'kintone検索エラー');
+  if (!data.records || data.records.length === 0) throw new Error('利用者が見つかりませんでした');
+  const rec = data.records[0];
+  return {
+    name: rec[KINTONE_CONFIG.userNameField].value,
+    recordId: rec.$id.value,
+  };
+}
+
+async function postPurchase(userId, userName, cartItems) {
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const itemSummary = cartItems.map(i => `${i.name}×${i.qty}`).join('、');
+  const totalAmount = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+
+  if (isDemoMode()) {
+    await new Promise(r => setTimeout(r, 1000));
+    console.log('[DEMO] 購入登録:', { userId, userName, dateStr, itemSummary, totalAmount, cartItems });
+    return true;
+  }
+
+  const url = `https://${KINTONE_CONFIG.subdomain}.cybozu.com/k/v1/record.json`;
+  // ※セキュアアクセスの場合: KINTONE_CONFIG.subdomain を 'minatomo.s' に設定してください
+  const record = {
+    app: KINTONE_CONFIG.purchaseAppId,
+    record: {
+      user_id:      { value: userId },
+      user_name:    { value: userName },
+      purchase_date:{ value: dateStr },
+      items:        { value: itemSummary },
+      total_amount: { value: totalAmount },
+    }
+  };
+  // 明細テーブルがある場合は追加
+  const subtable = cartItems.map(item => ({
+    value: {
+      item_name:  { value: item.name },
+      unit_price: { value: item.price },
+      quantity:   { value: item.qty },
+      subtotal:   { value: item.price * item.qty },
+    }
+  }));
+  if (subtable.length > 0) record.record.purchase_detail = { value: subtable };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-Cybozu-API-Token': KINTONE_CONFIG.apiToken_purchase,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(record),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'kintone登録エラー');
+  return true;
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  state.screen = id;
+  updateStepper(id);
+}
+
+function updateStepper(screen) {
+  const steps = { 'id':0, 'name-confirm':1, 'select':2, 'confirm':3, 'done':4 };
+  const cur = steps[screen] ?? 0;
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.remove('done','active','idle');
+    if (i < cur)      el.classList.add('done');
+    else if (i === cur) el.classList.add('active');
+    else               el.classList.add('idle');
+  });
+  document.querySelectorAll('.step-line').forEach((el, i) => {
+    el.classList.toggle('done', i < cur);
+  });
+}
+
+function getCartItems() {
+  return PRODUCTS.filter(p => (state.cart[p.id] || 0) > 0).map(p => ({
+    ...p, qty: state.cart[p.id]
+  }));
+}
+
+function getTotal() {
+  return getCartItems().reduce((s, i) => s + i.price * i.qty, 0);
+}
+
+// ============================================================
+// Screen: ID入力
+// ============================================================
+function numpadPress(val) {
+  if (val === 'del') {
+    state.inputId = state.inputId.slice(0, -1);
+  } else {
+    if (state.inputId.length >= 6) return;
+    state.inputId += val;
+  }
+  const el = document.getElementById('id-display');
+  el.innerHTML = state.inputId
+    ? `<span style="letter-spacing:10px">${state.inputId.replace(/./g, '●')}</span>`
+    : `<span class="placeholder">IDを入力してください</span>`;
+  document.getElementById('btn-search').disabled = state.inputId.length === 0;
+  document.getElementById('error-id').style.display = 'none';
+}
+
+async function doSearch() {
+  if (!state.inputId) return;
+  const btn = document.getElementById('btn-search');
+  const err = document.getElementById('error-id');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>検索中...';
+
+  try {
+    const result = await fetchUserByID(state.inputId);
+    state.userName = result.name;
+    state.kintoneRecordId = result.recordId;
+
+    document.getElementById('disp-name').textContent = result.name;
+    document.getElementById('disp-id').textContent = `利用者ID：${state.inputId}`;
+    showScreen('name-confirm');
+  } catch(e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔍　この番号で検索する';
+  }
+}
+
+// ============================================================
+// Screen: 商品選択
+// ============================================================
+function buildProductGrid() {
+  const grid = document.getElementById('product-grid');
+  grid.innerHTML = '';
+  PRODUCTS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'product-btn' + (state.cart[p.id] ? ' selected' : '');
+    btn.id = 'pbtn-' + p.id;
+    btn.innerHTML = `
+      <div class="qty-badge" id="badge-${p.id}">${state.cart[p.id] || ''}</div>
+      <div class="p-icon">${p.icon}</div>
+      <div class="p-name">${p.name}</div>
+      <div class="p-price">¥${p.price.toLocaleString()}</div>`;
+    btn.addEventListener('click', () => toggleProduct(p.id));
+    grid.appendChild(btn);
+  });
+}
+
+function toggleProduct(pid) {
+  state.cart[pid] = (state.cart[pid] || 0) + 1;
+  if (state.cart[pid] > 9) state.cart[pid] = 0;
+  if (state.cart[pid] === 0) delete state.cart[pid];
+  updateProductUI(pid);
+  updateCartSummary();
+}
+
+function updateProductUI(pid) {
+  const btn = document.getElementById('pbtn-' + pid);
+  const badge = document.getElementById('badge-' + pid);
+  const qty = state.cart[pid] || 0;
+  btn.classList.toggle('selected', qty > 0);
+  badge.textContent = qty || '';
+}
+
+function updateCartSummary() {
+  const total = getTotal();
+  document.getElementById('cart-total-disp').textContent = `¥${total.toLocaleString()}`;
+  document.getElementById('btn-to-confirm').disabled = total === 0;
+}
+
+function goToConfirm() {
+  // 確認リスト構築
+  const items = getCartItems();
+  const list = document.getElementById('confirm-items');
+  list.innerHTML = items.map(i => `
+    <li>
+      <span class="item-name">${i.icon} ${i.name}　×${i.qty}</span>
+      <span class="item-price">¥${(i.price * i.qty).toLocaleString()}</span>
+    </li>`).join('');
+  document.getElementById('confirm-total').textContent = `¥${getTotal().toLocaleString()}`;
+  document.getElementById('confirm-user-name').textContent = state.userName;
+  showScreen('confirm');
+}
+
+// ============================================================
+// Screen: 購入確定
+// ============================================================
+async function doPurchase() {
+  const btn = document.getElementById('btn-purchase');
+  const err = document.getElementById('error-confirm');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>登録中...';
+
+  try {
+    await postPurchase(state.inputId, state.userName, getCartItems());
+
+    // 完了画面
+    document.getElementById('done-name').textContent = state.userName + 'さん';
+    document.getElementById('done-total').textContent = `¥${getTotal().toLocaleString()}`;
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    document.getElementById('done-month').textContent
+      = `${nextMonth.getFullYear()}年${nextMonth.getMonth()+1}月`;
+    showScreen('done');
+  } catch(e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '✅　購入を確定する';
+  }
+}
+
+function resetAll() {
+  state = { screen:'id', inputId:'', userName:'', kintoneRecordId:null, cart:{} };
+  numpadPress('reset');  // display reset
+  document.getElementById('id-display').innerHTML = '<span class="placeholder">IDを入力してください</span>';
+  document.getElementById('error-id').style.display = 'none';
+  document.getElementById('error-confirm').style.display = 'none';
+  showScreen('id');
+}
+</script>
+
+<!-- ===== MARKUP ===== -->
+
+<header class="header">
+  <div class="logo">🫐</div>
+  <div class="logo-text">
+    <div class="brand">みなとも</div>
+    <div class="sub">お買い物アプリ</div>
+  </div>
+</header>
+
+<!-- ステッパー -->
+<div class="stepper" style="width:100%;max-width:720px;margin-bottom:20px;">
+  <div class="step active" id="step0">1</div>
+  <div class="step-line" id="line0"></div>
+  <div class="step idle" id="step1">2</div>
+  <div class="step-line" id="line1"></div>
+  <div class="step idle" id="step2">3</div>
+  <div class="step-line" id="line2"></div>
+  <div class="step idle" id="step3">4</div>
+</div>
+
+<!-- ===== 画面①：ID入力 ===== -->
+<div class="card screen active" id="screen-id">
+  <h2>IDを入力してください</h2>
+  <p class="lead">スタッフから配られたカードの番号を押してください</p>
+
+  <div class="id-display" id="id-display">
+    <span class="placeholder">IDを入力してください</span>
+  </div>
+
+  <div class="numpad">
+    <button class="num" onclick="numpadPress('1')">１</button>
+    <button class="num" onclick="numpadPress('2')">２</button>
+    <button class="num" onclick="numpadPress('3')">３</button>
+    <button class="num" onclick="numpadPress('4')">４</button>
+    <button class="num" onclick="numpadPress('5')">５</button>
+    <button class="num" onclick="numpadPress('6')">６</button>
+    <button class="num" onclick="numpadPress('7')">７</button>
+    <button class="num" onclick="numpadPress('8')">８</button>
+    <button class="num" onclick="numpadPress('9')">９</button>
+    <button class="blank"></button>
+    <button class="num" onclick="numpadPress('0')">０</button>
+    <button class="del" onclick="numpadPress('del')">⌫</button>
+  </div>
+
+  <div class="error-box" id="error-id">エラー</div>
+
+  <button class="btn-primary" id="btn-search" disabled onclick="doSearch()">
+    🔍　この番号で検索する
+  </button>
+</div>
+
+<!-- ===== 画面②：名前確認 ===== -->
+<div class="card screen" id="screen-name-confirm">
+  <h2>こんにちは！</h2>
+  <p class="lead">こちらのお名前で合っていますか？</p>
+
+  <div class="name-box">
+    <div class="name-label">お名前</div>
+    <div class="name-val" id="disp-name"></div>
+    <div class="id-val" id="disp-id"></div>
+  </div>
+
+  <button class="btn-primary" onclick="(state.cart={}, buildProductGrid(), updateCartSummary(), showScreen('select'))">
+    ✅　はい、私です
+  </button>
+  <button class="btn-secondary" onclick="resetAll()">
+    ちがいます（もどる）
+  </button>
+</div>
+
+<!-- ===== 画面③：商品選択 ===== -->
+<div class="card screen" id="screen-select">
+  <h2>商品を選んでください</h2>
+  <p class="lead">ボタンを押すたびに数量が増えます（最大9個）</p>
+
+  <div class="products" id="product-grid"></div>
+
+  <div class="cart-summary">
+    <span class="cart-label">🛒 合計金額</span>
+    <span class="cart-total" id="cart-total-disp">¥0</span>
+  </div>
+
+  <button class="btn-primary" id="btn-to-confirm" disabled onclick="goToConfirm()">
+    次へ　→
+  </button>
+  <button class="btn-secondary" onclick="showScreen('name-confirm')">
+    もどる
+  </button>
+</div>
+
+<!-- ===== 画面④：確認 ===== -->
+<div class="card screen" id="screen-confirm">
+  <h2>購入内容の確認</h2>
+  <p class="lead">内容を確認してボタンを押してください</p>
+
+  <ul class="confirm-list" id="confirm-items"></ul>
+
+  <div class="total-row">
+    <span>合計</span>
+    <span class="total-val" id="confirm-total"></span>
+  </div>
+
+  <div class="billing-note">
+    📅 ご請求は来月のサービス費と一緒にお知らせします<br>
+    ご利用者：<strong id="confirm-user-name"></strong> 様
+  </div>
+
+  <div class="error-box" id="error-confirm"></div>
+
+  <button class="btn-primary" id="btn-purchase" onclick="doPurchase()">
+    ✅　購入を確定する
+  </button>
+  <button class="btn-secondary" onclick="showScreen('select')">
+    商品を変更する
+  </button>
+</div>
+
+<!-- ===== 画面⑤：完了 ===== -->
+<div class="card screen" id="screen-done">
+  <div class="success-icon">🎉</div>
+  <div class="success-msg">ありがとうございました！</div>
+  <div class="success-sub" id="done-msg">
+    <strong id="done-name"></strong><br>
+    <strong id="done-total"></strong> のご購入を記録しました。<br>
+    <span id="done-month"></span>のご請求にまとめてお知らせします。
+  </div>
+
+  <button class="btn-primary" onclick="resetAll()">
+    👋　おわる（最初の画面へ）
+  </button>
+</div>
+
+<!-- デモモード表示 -->
+<div id="demo-banner" style="margin-top:20px;padding:10px 18px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;font-size:14px;color:#856404;max-width:720px;width:100%;text-align:center;"></div>
+
+<script>
+  // デモバナー
+  if (isDemoMode()) {
+    document.getElementById('demo-banner').textContent
+      = '🛠 デモモード動作中 | kintone設定後に本番利用できます | テスト用ID: 0001 / 0002 / 1234';
+  }
+  // 初期化
+  updateStepper('id');
+</script>
+
+</body>
+</html>
