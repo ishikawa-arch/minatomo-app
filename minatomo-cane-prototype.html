@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>【社内確認用】みなともmade 杖のお試しレンタル</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;800&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { font-size:16px; -webkit-text-size-adjust:100%; }
+body { font-family:'Noto Sans JP',sans-serif; background:#FAFAF7; overscroll-behavior-y:none; }
+button { font-family:'Noto Sans JP',sans-serif; -webkit-appearance:none; }
+img { max-width:100%; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes fadeUp { from { opacity:0;transform:translateY(16px); } to { opacity:1;transform:translateY(0); } }
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+
+.review-banner {
+  background:#FF6B35; color:#fff; text-align:center;
+  padding:10px 16px; font-size:11px; font-weight:700; letter-spacing:0.5px;
+  position:relative; z-index:300;
+}
+</style>
+</head>
+<body>
+
+<div class="review-banner">📋 社内確認用プロトタイプ ─ 商品画像・データは仮</div>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const C = {
+  primary:"#2A6B5A", primaryLight:"#6ECEB2", primaryBg:"#F0FAF6",
+  dark:"#1a1a2e", darkBlue:"#16213e", text:"#333", textLight:"#666",
+  textMuted:"#999", bg:"#FAFAF7", white:"#fff", border:"#e8e8e8", accent:"#B7791F",
+};
+
+const ALL_CANES = [
+  { id:1,name:"ロコケインW",maker:"シュポーン",type:"multi",weight:"580g",length:"72〜95cm",grip:"人間工学設計",price:60000,insurance:true,feature:"ダイヤル式無段階高さ調整・人間工学グリップ・4点接地自立式",desc:"理学療法士が設計した次世代多点杖。ダイヤルひとつで高さ調整が可能。" },
+  { id:2,name:"ロコケイン",maker:"シュポーン",type:"single",weight:"280g",length:"70〜93cm",grip:"人間工学設計",price:35000,insurance:false,feature:"超軽量・ダイヤル式高さ調整・制振グリップ",desc:"シュポーン独自の制振グリップ技術を搭載した一点杖のフラッグシップ。" },
+  { id:3,name:"カーボンスリム CL-100",maker:"メーカーA",type:"single",weight:"220g",length:"69〜92cm",grip:"ストレート",price:8900,insurance:false,feature:"超軽量カーボン・折りたたみ式・携帯ケース付",desc:"外出先への携帯に最適な折りたたみカーボン杖。" },
+  { id:4,name:"やわらGRIP ソフト",maker:"メーカーB",type:"single",weight:"310g",length:"68〜90cm",grip:"ソフトラバー",price:7500,insurance:false,feature:"握りやすいソフトグリップ・夜間反射材付き",desc:"握力に不安がある方向けのソフトグリップモデル。" },
+  { id:5,name:"ウォークメイト WM-3",maker:"メーカーC",type:"single",weight:"290g",length:"70〜95cm",grip:"オフセット",price:9800,insurance:false,feature:"衝撃吸収ゴム先端・10段階高さ調節",desc:"衝撃吸収機構で関節への負担を軽減。" },
+  { id:6,name:"スマートケイン SC",maker:"メーカーD",type:"single",weight:"340g",length:"72〜92cm",grip:"オフセット",price:15800,insurance:false,feature:"LED内蔵・転倒検知アラート機能",desc:"夜間歩行の安全性を高めるLED搭載モデル。" },
+  { id:7,name:"エアライト AL-200",maker:"メーカーE",type:"single",weight:"195g",length:"69〜91cm",grip:"ストレート",price:9800,insurance:false,feature:"業界最軽量クラス・アルミ合金・5色展開",desc:"とにかく軽い杖をお求めの方に。" },
+  { id:8,name:"伸縮らくらく NS-5",maker:"メーカーF",type:"single",weight:"320g",length:"65〜90cm",grip:"T字",price:7000,insurance:false,feature:"ワンプッシュ伸縮・幅広先ゴム",desc:"シンプル操作の定番モデル。" },
+  { id:9,name:"ナチュラルウッド 桜",maker:"メーカーG",type:"single",weight:"380g",length:"84cm固定",grip:"丸型",price:18000,insurance:false,feature:"天然桜材・職人手仕上げ・一本木",desc:"木の温もりを感じる職人仕上げの一品。" },
+  { id:10,name:"フィットステップ FS",maker:"メーカーH",type:"single",weight:"300g",length:"70〜93cm",grip:"オフセット",price:8200,insurance:false,feature:"回転式先ゴム・坂道対応・自立式",desc:"坂道や傾斜面での安定性を重視。" },
+  { id:11,name:"安心4点 SQ-400",maker:"メーカーA",type:"multi",weight:"620g",length:"70〜90cm",grip:"T字",price:9800,insurance:true,feature:"小型ベース・室内向き・コンパクト",desc:"室内利用に特化した小型ベースの4点杖。" },
+  { id:12,name:"ワイドベース WB-3",maker:"メーカーB",type:"multi",weight:"680g",length:"72〜93cm",grip:"オフセット",price:12000,insurance:true,feature:"大型ベース・高安定性・屋外対応",desc:"安定感を最優先する方に。屋外使用にも対応。" },
+  { id:13,name:"マルチポッド MP-S",maker:"メーカーC",type:"multi",weight:"550g",length:"69〜92cm",grip:"ストレート",price:8500,insurance:true,feature:"3点式・軽量・コンパクト設計",desc:"多点杖の安定性と軽さを両立した3点式。" },
+  { id:14,name:"セーフウォーク SW-4",maker:"メーカーD",type:"multi",weight:"700g",length:"71〜94cm",grip:"オフセット",price:14800,insurance:true,feature:"可動式ベース・段差対応・屋内外兼用",desc:"段差のある環境でもスムーズに歩行。" },
+  { id:15,name:"リハビリステッキ RS",maker:"メーカーE",type:"multi",weight:"600g",length:"70〜92cm",grip:"T字太グリップ",price:13000,insurance:true,feature:"太グリップ・リハビリ向き・荷重表示付",desc:"退院後のリハビリ段階に最適な一本。" },
+  { id:16,name:"らくピタ 4点 RP",maker:"メーカーF",type:"multi",weight:"640g",length:"68〜90cm",grip:"T字",price:8800,insurance:true,feature:"先端ラバー吸着・滑り防止強化",desc:"タイルや濡れた床でもグリップする先端設計。" },
+  { id:17,name:"オールテレイン AT-Q",maker:"メーカーG",type:"multi",weight:"720g",length:"72〜95cm",grip:"オフセット",price:18500,insurance:true,feature:"全地形対応・交換式先端・耐久設計",desc:"砂利道や土の上でも使える全地形モデル。" },
+  { id:18,name:"コンパクト4 C4",maker:"メーカーH",type:"multi",weight:"510g",length:"69〜91cm",grip:"T字",price:9800,insurance:true,feature:"折りたたみ式4点杖・携帯性◎",desc:"持ち運べる多点杖。旅行や通院に。" },
+];
+
+const AI_QUESTIONS = [
+  { key:"bodyInfo",category:"基本情報",q:"身長と体重を教えてください",type:"dual_select",
+    selects:[{key:"height",label:"身長",options:["140cm未満","140〜149cm","150〜159cm","160〜169cm","170〜179cm","180cm以上"]},{key:"weight",label:"体重",options:["40kg未満","40〜49kg","50〜59kg","60〜69kg","70〜79kg","80kg以上"]}],
+    note:"杖の長さ・耐荷重の算出に使用します" },
+  { key:"diagnosis",category:"身体機能",q:"杖を使用する主な理由を教えてください",type:"single",
+    options:["脳卒中後の片麻痺（右）","脳卒中後の片麻痺（左）","変形性膝関節症","変形性股関節症","腰部脊柱管狭窄症","パーキンソン病","骨折後のリハビリ中","加齢による筋力低下・バランス不安","その他"],
+    note:"疾患特性に応じた杖の形状を判断します" },
+  { key:"walkingAbility",category:"歩行評価",q:"現在の歩行状態に最も近いものは？",type:"single",
+    options:["杖なしでは立位保持も困難","手すり・壁伝いでなんとか歩ける","見守りがあれば杖なしで歩ける","屋内は自立、屋外で不安がある","概ね自立、転倒予防として使用したい"],
+    note:"歩行自立度から支持性の必要レベルを評価" },
+  { key:"balance",category:"歩行評価",q:"歩行中の症状は？（複数選択可）",type:"multi",
+    options:["体が左右に揺れる（体幹動揺）","足がつまずきやすい","膝が折れる・力が抜ける感じ","足の痛みで歩行距離が短い","方向転換時にふらつく","歩幅が小さく、すり足になる","特にない"],
+    note:"歩行パターンから最適な杖タイプを絞り込みます" },
+  { key:"grip",category:"上肢機能",q:"杖を握る側の手の状態は？",type:"single",
+    options:["握力が弱い・手指の変形がある","握れるが長時間持つと疲れる","問題なく握れる"],
+    note:"グリップ形状・太さの選定に反映" },
+  { key:"environment",category:"使用環境",q:"杖を主に使う場所は？",type:"single",
+    options:["屋内のみ（自宅内の移動）","屋外のみ（通院・買い物など）","屋内・屋外どちらも"],
+    note:"先端ゴム・ベースサイズの調整に使用" },
+  { key:"surface",category:"使用環境",q:"よく歩く路面は？（複数選択可）",type:"multi",
+    options:["フローリング・室内タイル","アスファルト・コンクリート","砂利道・土","段差や坂道が多い","濡れた路面を歩くことがある"],
+    note:"先端形状・滑り止め性能の選定に使用" },
+  { key:"priority",category:"ご希望",q:"重視するポイントを2つ選んでください",type:"multi",maxSelect:2,
+    options:["とにかく軽いこと","安定感・安心感","握りやすさ","見た目・デザイン","持ち運びやすさ","価格を抑えたい","介護保険を使いたい"],
+    note:"ご希望を考慮して最終3本を選定" },
+];
+
+function Badge({children,color=C.primary,bg=C.primaryBg}){
+  return <span style={{display:"inline-block",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:4,color,background:bg,lineHeight:1.4}}>{children}</span>;
+}
+
+// ══ Bottom Tab Nav ══
+function BottomNav({page,goTo}){
+  const items = [
+    {icon:"🏠",label:"TOP",p:0},
+    {icon:"📋",label:"商品一覧",p:1},
+    {icon:"🧠",label:"AIリコメンド",p:2},
+    {icon:"📖",label:"ガイド",p:3},
+  ];
+  return (
+    <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:200,background:"rgba(255,255,255,0.97)",backdropFilter:"blur(12px)",borderTop:"1px solid #e0e0e0",display:"flex",paddingBottom:"env(safe-area-inset-bottom)"}}>
+      {items.map(item=>(
+        <button key={item.p} onClick={()=>goTo(item.p)} style={{
+          flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+          padding:"8px 0 6px",border:"none",background:"transparent",cursor:"pointer",
+          color:page===item.p?C.primary:C.textMuted,transition:"color 0.2s",
+        }}>
+          <span style={{fontSize:20}}>{item.icon}</span>
+          <span style={{fontSize:9,fontWeight:page===item.p?700:400}}>{item.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ══ LP ══
+function LandingPage({goTo}){
+  return (
+    <div style={{paddingBottom:70}}>
+      {/* Hero */}
+      <section style={{background:`linear-gradient(170deg,${C.dark} 0%,${C.darkBlue} 40%,#0f3460 100%)`,color:"#fff",padding:"56px 20px 52px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,background:`radial-gradient(circle at 80% 20%,rgba(42,107,90,0.3) 0%,transparent 60%)`}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{fontSize:11,letterSpacing:3,color:C.primaryLight,marginBottom:16}}>みなともmade</div>
+          <h1 style={{fontFamily:"'Noto Serif JP',serif",fontSize:30,fontWeight:700,lineHeight:1.45,marginBottom:18}}>
+            杖は、<span style={{color:C.primaryLight}}>握って歩いて</span><br/>はじめてわかる。
+          </h1>
+          <p style={{fontSize:14,lineHeight:1.9,color:"rgba(255,255,255,0.7)",marginBottom:28}}>
+            理学療法士が「正直、使ってみないとわからない」と言う杖選び。AIが18本から最適な3本を選んでご自宅にお届け。
+          </p>
+          <button onClick={()=>goTo(2)} style={{background:C.primaryLight,color:C.dark,border:"none",padding:"16px 0",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer",width:"100%",marginBottom:10}}>AIで杖を選んでもらう</button>
+          <button onClick={()=>goTo(1)} style={{background:"transparent",color:C.primaryLight,border:`1.5px solid ${C.primaryLight}`,padding:"14px 0",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",width:"100%"}}>全18本の商品一覧</button>
+        </div>
+      </section>
+
+      {/* Flow */}
+      <section style={{padding:"44px 20px"}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:11,letterSpacing:3,color:C.primary,fontWeight:700,marginBottom:8}}>HOW IT WORKS</div>
+          <h2 style={{fontFamily:"'Noto Serif JP',serif",fontSize:22,fontWeight:700,color:C.dark}}>ご利用の流れ</h2>
+        </div>
+        {[
+          {n:"01",icon:"🧠",t:"AIに相談 or 自分で選ぶ",d:"8つの質問に答えるだけ。AIが最適な3本を提案。自分で選ぶことも可能。"},
+          {n:"02",icon:"📦",t:"3本のデモ品が届く",d:"ご自宅にお届け。初回送料は無料です。"},
+          {n:"03",icon:"🚶",t:"1週間じっくり試す",d:"普段の生活環境で実際に使ってください。"},
+          {n:"04",icon:"✅",t:"気に入った1本を購入",d:"合う1本を購入。残りは返送するだけ。介護保険も対応。"},
+        ].map((item,i)=>(
+          <div key={item.n} style={{background:C.white,borderRadius:14,padding:"22px 20px",boxShadow:"0 1px 8px rgba(0,0,0,0.04)",marginBottom:12,display:"flex",gap:16,alignItems:"flex-start"}}>
+            <div style={{width:44,height:44,borderRadius:12,background:C.primaryBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{item.icon}</div>
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                <span style={{fontSize:11,fontWeight:800,color:C.primary}}>{item.n}</span>
+                <h3 style={{fontSize:14,fontWeight:700,color:C.dark}}>{item.t}</h3>
+              </div>
+              <p style={{fontSize:12,lineHeight:1.7,color:C.textLight,margin:0}}>{item.d}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* Story */}
+      <section style={{padding:"40px 20px",background:C.white}}>
+        <div style={{fontSize:11,letterSpacing:3,color:C.primary,fontWeight:700,marginBottom:8}}>STORY</div>
+        <h2 style={{fontFamily:"'Noto Serif JP',serif",fontSize:20,fontWeight:700,color:C.dark,lineHeight:1.5,marginBottom:20}}>理学療法士の"本音"から<br/>生まれたサービス</h2>
+        <div style={{fontSize:14,lineHeight:2,color:C.text}}>
+          <p style={{marginBottom:14}}>「カタログだけで杖を選ぶのは、試着せずに靴を買うようなもの。」</p>
+          <p style={{marginBottom:14}}>13年間、延べ数千人のリハビリに携わってきたチームが感じていた限界。歩き方を見れば3本には絞れる。でも、<strong style={{color:C.primary}}>本人が握って歩かないとわからない</strong>。</p>
+          <p>だから、AIで3本に絞って、届けて、使ってもらって、選んでもらう。</p>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section style={{padding:"40px 20px"}}>
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:11,letterSpacing:3,color:C.primary,fontWeight:700,marginBottom:8}}>PRICING</div>
+          <h2 style={{fontFamily:"'Noto Serif JP',serif",fontSize:22,fontWeight:700,color:C.dark}}>料金について</h2>
+        </div>
+        <div style={{background:C.white,borderRadius:14,overflow:"hidden",boxShadow:"0 1px 8px rgba(0,0,0,0.04)"}}>
+          {[["商品価格","¥7,000〜¥60,000"],["初回送料","無料（往復当社負担）"],["2回目以降","¥4,000（往復利用者負担）"],["お試し期間","1週間"],["お支払い","銀行振込"],["介護保険","多点杖は適用可（償還払い）"]].map(([k,v],i)=>(
+            <div key={i} style={{display:"flex",padding:"14px 18px",borderBottom:i<5?`1px solid ${C.border}`:"none"}}>
+              <span style={{width:100,fontSize:13,fontWeight:700,color:C.dark,flexShrink:0}}>{k}</span>
+              <span style={{fontSize:13,color:C.textLight}}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{padding:"44px 20px",background:`linear-gradient(135deg,${C.primary},#1a4a3e)`,textAlign:"center",color:"#fff"}}>
+        <h2 style={{fontFamily:"'Noto Serif JP',serif",fontSize:20,fontWeight:700,marginBottom:12,lineHeight:1.5}}>あなたに合う3本を<br/>見つけませんか？</h2>
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",marginBottom:24}}>AIが歩行パターンを分析して最適な3本をご提案</p>
+        <button onClick={()=>goTo(2)} style={{background:"#fff",color:C.primary,border:"none",padding:"16px 0",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer",width:"100%",marginBottom:10}}>AIリコメンドを試す</button>
+        <button style={{background:"transparent",color:"#fff",border:"1.5px solid rgba(255,255,255,0.4)",padding:"14px 0",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",width:"100%"}}>📞 電話で相談する</button>
+      </section>
+    </div>
+  );
+}
+
+// ══ Product List ══
+function ProductList({goTo}){
+  const [filter,setFilter]=useState("all");
+  const [selected,setSelected]=useState([]);
+  const [showModal,setShowModal]=useState(false);
+  const filtered = filter==="all"?ALL_CANES:ALL_CANES.filter(c=>c.type===filter);
+  const toggle = id => { if(selected.includes(id)) setSelected(selected.filter(s=>s!==id)); else if(selected.length<3) setSelected([...selected,id]); };
+
+  return (
+    <div style={{paddingBottom:selected.length>0?130:70}}>
+      {/* Header */}
+      <div style={{background:C.dark,padding:"28px 20px 22px",color:"#fff"}}>
+        <h1 style={{fontFamily:"'Noto Serif JP',serif",fontSize:22,fontWeight:700,marginBottom:6}}>杖の商品一覧</h1>
+        <p style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>全18商品から選べます</p>
+      </div>
+
+      {/* Filter */}
+      <div style={{padding:"16px 20px 0",display:"flex",gap:6,overflowX:"auto"}}>
+        {[{key:"all",label:"すべて(18)"},{key:"single",label:"1点杖(9)"},{key:"multi",label:"多点杖(9)"}].map(t=>(
+          <button key={t.key} onClick={()=>setFilter(t.key)} style={{
+            padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",
+            border:filter===t.key?"none":"1.5px solid #ccc",
+            background:filter===t.key?C.primary:C.white,color:filter===t.key?"#fff":C.textLight,
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Cards */}
+      <div style={{padding:"16px 20px"}}>
+        {filtered.map(cane=>{
+          const isSel=selected.includes(cane.id);
+          return (
+            <div key={cane.id} style={{
+              background:C.white,borderRadius:14,marginBottom:14,overflow:"hidden",
+              boxShadow:isSel?`0 0 0 2px ${C.primary},0 2px 12px rgba(42,107,90,0.12)`:"0 1px 8px rgba(0,0,0,0.05)",
+              transition:"all 0.2s",
+            }}>
+              {/* Image */}
+              <div style={{height:140,background:`linear-gradient(135deg,${C.primary}08,${C.primary}03)`,display:"flex",alignItems:"center",justifyContent:"center",borderBottom:`1px solid ${C.border}`,position:"relative"}}>
+                <span style={{fontSize:12,color:C.textMuted}}>商品画像</span>
+                <div style={{position:"absolute",top:10,left:10,display:"flex",gap:4}}>
+                  <Badge color={cane.type==="multi"?"#2B6CB0":C.accent} bg={cane.type==="multi"?"#EBF4FF":"#FFF8EB"}>{cane.type==="multi"?"多点杖":"1点杖"}</Badge>
+                  {cane.insurance && <Badge>介護保険対応</Badge>}
+                </div>
+              </div>
+              {/* Info */}
+              <div style={{padding:"14px 16px 16px"}}>
+                <div style={{fontSize:10,color:C.textMuted,marginBottom:2}}>{cane.maker}</div>
+                <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 6px",color:C.dark}}>{cane.name}</h3>
+                <p style={{fontSize:12,color:C.textLight,lineHeight:1.6,margin:"0 0 10px"}}>{cane.feature}</p>
+                <div style={{display:"flex",gap:8,fontSize:11,color:C.textMuted,marginBottom:14,flexWrap:"wrap"}}>
+                  <span>{cane.weight}</span><span>{cane.length}</span><span>{cane.grip}</span>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <span style={{fontSize:22,fontWeight:800,color:C.primary}}>¥{cane.price.toLocaleString()}</span>
+                    <span style={{fontSize:11,color:C.textMuted,marginLeft:3}}>税込</span>
+                  </div>
+                  <button onClick={()=>toggle(cane.id)} style={{
+                    background:isSel?C.primary:C.bg,color:isSel?"#fff":C.textLight,
+                    border:isSel?"none":`1.5px solid ${C.border}`,
+                    padding:"10px 20px",borderRadius:8,fontSize:13,fontWeight:700,
+                    cursor:selected.length>=3&&!isSel?"not-allowed":"pointer",
+                    opacity:selected.length>=3&&!isSel?0.4:1,minWidth:90,
+                  }}>{isSel?"✓ 選択中":"試す"}</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Float action bar */}
+      {selected.length>0 && (
+        <div style={{position:"fixed",bottom:56,left:0,right:0,zIndex:150,padding:"0 16px",paddingBottom:"env(safe-area-inset-bottom)",animation:"slideUp 0.3s ease"}}>
+          <div style={{background:C.dark,borderRadius:14,padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 -2px 20px rgba(0,0,0,0.2)"}}>
+            <div>
+              <span style={{color:C.primaryLight,fontSize:14,fontWeight:700}}>{selected.length}/3本</span>
+              <span style={{color:"rgba(255,255,255,0.5)",fontSize:12,marginLeft:6}}>選択中</span>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setSelected([])} style={{background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.6)",border:"none",padding:"9px 14px",borderRadius:8,fontSize:12,cursor:"pointer"}}>リセット</button>
+              {selected.length===3 && (
+                <button onClick={()=>setShowModal(true)} style={{background:C.primaryLight,color:C.dark,border:"none",padding:"9px 18px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer"}}>この3本を試す</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI CTA */}
+      <div style={{padding:"0 20px 20px",textAlign:"center"}}>
+        <div style={{background:C.primaryBg,borderRadius:14,padding:"22px 20px"}}>
+          <p style={{fontSize:13,color:C.primary,fontWeight:700,marginBottom:12}}>どれがいいかわからない？</p>
+          <button onClick={()=>goTo(2)} style={{background:C.primary,color:"#fff",border:"none",padding:"14px 0",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",width:"100%"}}>AIにおまかせする</button>
+        </div>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:1000}} onClick={()=>setShowModal(false)}>
+          <div style={{background:C.white,borderRadius:"20px 20px 0 0",padding:"28px 20px",paddingBottom:"calc(28px + env(safe-area-inset-bottom))",width:"100%",maxWidth:480,animation:"slideUp 0.3s ease"}} onClick={e=>e.stopPropagation()}>
+            <div style={{width:36,height:4,borderRadius:2,background:"#ddd",margin:"0 auto 18px"}}/>
+            <h3 style={{fontFamily:"'Noto Serif JP',serif",fontSize:19,fontWeight:700,marginBottom:16,color:C.dark}}>選んだ3本を確認</h3>
+            {selected.map((id,i)=>{const c=ALL_CANES.find(x=>x.id===id);return(
+              <div key={id} style={{display:"flex",gap:12,alignItems:"center",padding:"12px 0",borderBottom:i<2?`1px solid ${C.border}`:"none"}}>
+                <div style={{width:32,height:32,borderRadius:8,background:C.primaryBg,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,color:C.primary,fontSize:15,flexShrink:0}}>{i+1}</div>
+                <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:C.dark}}>{c.name}</div><div style={{fontSize:11,color:C.textMuted}}>{c.maker}</div></div>
+                <div style={{fontSize:15,fontWeight:800,color:C.primary}}>¥{c.price.toLocaleString()}</div>
+              </div>
+            );})}
+            <button style={{marginTop:20,background:C.primary,color:"#fff",border:"none",width:"100%",padding:"16px",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer"}}>この3本を試す（初回送料無料）</button>
+            <p style={{textAlign:"center",fontSize:11,color:C.textMuted,marginTop:8}}>お届けまで3〜5営業日 ─ お試し期間は1週間</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══ AI Recommend ══
+function AIRecommend({goTo}){
+  const [mode,setMode]=useState(null);
+  const [step,setStep]=useState(0);
+  const [answers,setAnswers]=useState({});
+  const [showResult,setShowResult]=useState(false);
+  const [analyzing,setAnalyzing]=useState(false);
+  const q=AI_QUESTIONS[step];
+
+  const handleSingle=(key,val)=>{setAnswers({...answers,[key]:val});setTimeout(()=>{if(step<AI_QUESTIONS.length-1)setStep(step+1);else{setAnalyzing(true);setTimeout(()=>{setAnalyzing(false);setShowResult(true);},2500);}},350);};
+  const handleMulti=(key,val,max)=>{const cur=answers[key]||[];if(cur.includes(val))setAnswers({...answers,[key]:cur.filter(v=>v!==val)});else if(!max||cur.length<max)setAnswers({...answers,[key]:[...cur,val]});};
+  const handleDual=(subKey,val)=>{setAnswers({...answers,[q.key]:{...(answers[q.key]||{}),[subKey]:val}});};
+  const canProceed=()=>{if(!q)return false;if(q.type==="dual_select")return q.selects.every(s=>(answers[q.key]||{})[s.key]);if(q.type==="multi")return(answers[q.key]||[]).length>0;return!!answers[q.key];};
+  const goNext=()=>{if(step<AI_QUESTIONS.length-1)setStep(step+1);else{setAnalyzing(true);setTimeout(()=>{setAnalyzing(false);setShowResult(true);},2500);}};
+
+  const resultCanes=[ALL_CANES[0],ALL_CANES[1],ALL_CANES[11]];
+  const reasons=["歩行安定性の評価から多点杖を推奨。ダイヤル式で高さの微調整が可能。","軽量な一点杖が適応。制振グリップが手首負担を軽減。","屋外使用のため大型ベースの高安定性モデルも候補に。"];
+
+  return (
+    <div style={{paddingBottom:70}}>
+      <div style={{background:`linear-gradient(170deg,${C.dark},#0f3460)`,padding:"28px 20px 22px",color:"#fff"}}>
+        <h1 style={{fontFamily:"'Noto Serif JP',serif",fontSize:22,fontWeight:700,marginBottom:6}}>AI杖リコメンド</h1>
+        <p style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>理学療法士監修AIが最適な3本を選びます</p>
+      </div>
+
+      <div style={{padding:"24px 20px"}}>
+        {!mode && (
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {[
+              {key:"ai",icon:"🧠",title:"AIに選んでもらう",desc:"8つの専門的な質問に回答。歩行特性をAIが分析し最適な3本を提案",badge:"理学療法士監修",bc:C.primary,bb:C.primaryBg},
+              {key:"self",icon:"🔍",title:"自分で3本選ぶ",desc:"全18本の商品一覧から気になる3本を自分で選んでお試し",badge:"じっくり比較",bc:C.accent,bb:"#FFF8EB"},
+            ].map(item=>(
+              <button key={item.key} onClick={()=>item.key==="ai"?setMode("ai"):goTo(1)} style={{
+                background:C.white,borderRadius:16,padding:"28px 20px",textAlign:"left",cursor:"pointer",
+                boxShadow:"0 1px 10px rgba(0,0,0,0.05)",border:"none",width:"100%",
+                display:"flex",gap:16,alignItems:"center",
+              }}>
+                <div style={{fontSize:36,flexShrink:0}}>{item.icon}</div>
+                <div>
+                  <h3 style={{fontSize:16,fontWeight:700,marginBottom:4,color:C.dark}}>{item.title}</h3>
+                  <p style={{fontSize:12,color:C.textMuted,lineHeight:1.6,marginBottom:8}}>{item.desc}</p>
+                  <Badge color={item.bc} bg={item.bb}>{item.badge}</Badge>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {mode==="ai"&&!showResult&&!analyzing&&(
+          <div style={{background:C.white,borderRadius:16,padding:"28px 20px",boxShadow:"0 1px 10px rgba(0,0,0,0.05)"}}>
+            {/* Progress */}
+            <div style={{display:"flex",gap:3,marginBottom:16}}>
+              {AI_QUESTIONS.map((_,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<=step?C.primary:"#e4e4e4",transition:"background 0.3s"}}/>)}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <Badge>{q.category}</Badge>
+              <span style={{fontSize:11,color:C.textMuted}}>{step+1}/{AI_QUESTIONS.length}</span>
+            </div>
+            <h3 style={{fontSize:17,fontWeight:700,color:C.dark,margin:"8px 0 4px",lineHeight:1.5}}>{q.q}</h3>
+            <p style={{fontSize:11,color:C.textMuted,margin:"0 0 20px"}}>{q.note}</p>
+
+            {q.type==="single"&&(
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {q.options.map(opt=>(
+                  <button key={opt} onClick={()=>handleSingle(q.key,opt)} style={{
+                    background:answers[q.key]===opt?C.primary:C.bg,color:answers[q.key]===opt?"#fff":C.text,
+                    border:answers[q.key]===opt?`2px solid ${C.primary}`:`2px solid ${C.border}`,
+                    padding:"14px 16px",borderRadius:10,fontSize:14,cursor:"pointer",textAlign:"left",
+                  }}>{opt}</button>
+                ))}
+              </div>
+            )}
+
+            {q.type==="multi"&&(
+              <div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {q.options.map(opt=>{
+                    const sel=(answers[q.key]||[]).includes(opt);
+                    const atMax=q.maxSelect&&(answers[q.key]||[]).length>=q.maxSelect&&!sel;
+                    return <button key={opt} onClick={()=>handleMulti(q.key,opt,q.maxSelect)} style={{
+                      background:sel?C.primary:C.bg,color:sel?"#fff":atMax?C.textMuted:C.text,
+                      border:sel?`2px solid ${C.primary}`:`2px solid ${C.border}`,
+                      padding:"14px 16px",borderRadius:10,fontSize:14,cursor:atMax?"not-allowed":"pointer",textAlign:"left",opacity:atMax?0.5:1,
+                    }}><span style={{marginRight:6}}>{sel?"☑":"☐"}</span>{opt}</button>;
+                  })}
+                </div>
+                {q.maxSelect&&<p style={{fontSize:11,color:C.textMuted,marginTop:6}}>※ 最大{q.maxSelect}つまで</p>}
+                <button onClick={goNext} disabled={!canProceed()} style={{marginTop:18,background:canProceed()?C.primary:"#ccc",color:"#fff",border:"none",padding:"16px",borderRadius:10,fontSize:15,fontWeight:700,cursor:canProceed()?"pointer":"not-allowed",width:"100%"}}>次へ</button>
+              </div>
+            )}
+
+            {q.type==="dual_select"&&(
+              <div>
+                {q.selects.map(sel=>(
+                  <div key={sel.key} style={{marginBottom:18}}>
+                    <div style={{fontSize:13,fontWeight:700,color:C.dark,marginBottom:8}}>{sel.label}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {sel.options.map(opt=>{
+                        const active=(answers[q.key]||{})[sel.key]===opt;
+                        return <button key={opt} onClick={()=>handleDual(sel.key,opt)} style={{
+                          background:active?C.primary:C.bg,color:active?"#fff":C.text,
+                          border:active?`2px solid ${C.primary}`:`2px solid ${C.border}`,
+                          padding:"10px 14px",borderRadius:8,fontSize:13,cursor:"pointer",
+                        }}>{opt}</button>;
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <button onClick={goNext} disabled={!canProceed()} style={{marginTop:6,background:canProceed()?C.primary:"#ccc",color:"#fff",border:"none",padding:"16px",borderRadius:10,fontSize:15,fontWeight:700,cursor:canProceed()?"pointer":"not-allowed",width:"100%"}}>次へ</button>
+              </div>
+            )}
+
+            <button onClick={()=>{if(step>0)setStep(step-1);else setMode(null);}} style={{marginTop:14,background:"none",border:"none",color:C.textMuted,fontSize:13,cursor:"pointer",padding:"8px 0"}}>← 戻る</button>
+          </div>
+        )}
+
+        {analyzing&&(
+          <div style={{background:C.white,borderRadius:16,padding:"60px 20px",boxShadow:"0 1px 10px rgba(0,0,0,0.05)",textAlign:"center"}}>
+            <div style={{width:52,height:52,borderRadius:"50%",border:`3px solid ${C.border}`,borderTopColor:C.primary,margin:"0 auto 20px",animation:"spin 1s linear infinite"}}/>
+            <h3 style={{fontSize:16,fontWeight:700,color:C.dark,marginBottom:8}}>AIが分析中...</h3>
+            <p style={{fontSize:13,color:C.textMuted,lineHeight:1.8}}>歩行特性・身体機能・使用環境を<br/>総合的に評価しています</p>
+          </div>
+        )}
+
+        {showResult&&(
+          <div>
+            <div style={{background:C.white,borderRadius:16,padding:"28px 20px",boxShadow:"0 1px 10px rgba(0,0,0,0.05)",textAlign:"center",marginBottom:16}}>
+              <div style={{width:48,height:48,borderRadius:"50%",background:C.primaryBg,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px",fontSize:24}}>✓</div>
+              <h3 style={{fontFamily:"'Noto Serif JP',serif",fontSize:19,fontWeight:700,marginBottom:4,color:C.dark}}>おすすめの3本</h3>
+              <p style={{fontSize:11,color:C.textMuted}}>理学療法士監修AIが選定しました</p>
+            </div>
+
+            {resultCanes.map((cane,i)=>(
+              <div key={cane.id} style={{background:C.white,borderRadius:14,padding:"18px 16px",boxShadow:"0 1px 8px rgba(0,0,0,0.05)",marginBottom:12}}>
+                <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:C.primaryBg,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,color:C.primary,fontSize:16,flexShrink:0}}>{i+1}</div>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:3}}>
+                      <span style={{fontSize:10,color:C.textMuted}}>{cane.maker}</span>
+                      <Badge color={cane.type==="multi"?"#2B6CB0":C.accent} bg={cane.type==="multi"?"#EBF4FF":"#FFF8EB"}>{cane.type==="multi"?"多点杖":"1点杖"}</Badge>
+                      {cane.insurance&&<Badge>介護保険</Badge>}
+                    </div>
+                    <div style={{fontSize:16,fontWeight:700,color:C.dark}}>{cane.name}</div>
+                    <div style={{fontSize:18,fontWeight:800,color:C.primary,margin:"4px 0"}}>¥{cane.price.toLocaleString()}<span style={{fontSize:10,fontWeight:400,color:C.textMuted}}> 税込</span></div>
+                  </div>
+                </div>
+                <div style={{marginTop:8,padding:"10px 12px",background:C.bg,borderRadius:8,fontSize:12,color:C.textLight,lineHeight:1.7}}>
+                  <strong style={{color:C.primary}}>選定理由：</strong>{reasons[i]}
+                </div>
+              </div>
+            ))}
+
+            <button style={{marginTop:8,background:C.primary,color:"#fff",border:"none",padding:"18px",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer",width:"100%"}}>この3本を試す（初回送料無料）</button>
+            <p style={{textAlign:"center",fontSize:11,color:C.textMuted,marginTop:8}}>お届けまで3〜5営業日 ─ お試し期間は1週間</p>
+            <div style={{marginTop:16,display:"flex",gap:8}}>
+              <button onClick={()=>{setShowResult(false);setAnalyzing(false);setStep(0);setAnswers({});setMode(null);}} style={{flex:1,background:"none",border:`1.5px solid ${C.border}`,padding:"12px",borderRadius:8,fontSize:12,color:C.textLight,cursor:"pointer"}}>やり直す</button>
+              <button onClick={()=>goTo(1)} style={{flex:1,background:"none",border:`1.5px solid ${C.border}`,padding:"12px",borderRadius:8,fontSize:12,color:C.textLight,cursor:"pointer"}}>商品一覧</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ══ Info Page ══
+function InfoPage(){
+  const [tab,setTab]=useState("insurance");
+  return (
+    <div style={{paddingBottom:70}}>
+      <div style={{background:C.dark,padding:"28px 20px 22px",color:"#fff"}}>
+        <h1 style={{fontFamily:"'Noto Serif JP',serif",fontSize:22,fontWeight:700}}>ご利用ガイド</h1>
+      </div>
+      <div style={{padding:"16px 20px"}}>
+        <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:20,paddingBottom:4}}>
+          {[{key:"insurance",label:"介護保険"},{key:"support",label:"サポート"},{key:"safety",label:"安全のために"}].map(t=>(
+            <button key={t.key} onClick={()=>setTab(t.key)} style={{
+              padding:"8px 16px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",
+              border:tab===t.key?"none":"1.5px solid #ccc",
+              background:tab===t.key?C.primary:C.white,color:tab===t.key?"#fff":C.textLight,
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        <div style={{background:C.white,borderRadius:14,padding:"24px 20px",boxShadow:"0 1px 8px rgba(0,0,0,0.04)",fontSize:14,lineHeight:1.9,color:C.text}}>
+          {tab==="insurance"&&(
+            <div>
+              <h2 style={{fontSize:17,fontWeight:700,color:C.dark,marginBottom:16}}>介護保険でのご購入</h2>
+              <h3 style={{fontSize:13,fontWeight:700,color:C.primary,marginTop:20,marginBottom:6}}>事業所情報</h3>
+              {[["種別","特定福祉用具販売事業者"],["指定番号","愛知県指定 2377500497"],["事業所名","みなともmade"],["所在地","〒498-0026\n愛知県弥富市鯏浦町西前新田43"]].map(([k,v],i)=>(
+                <div key={i} style={{display:"flex",padding:"8px 0",borderBottom:`1px solid ${C.border}`,fontSize:13}}>
+                  <span style={{width:80,fontWeight:700,color:C.dark,flexShrink:0}}>{k}</span>
+                  <span style={{color:C.textLight,whiteSpace:"pre-wrap"}}>{v}</span>
+                </div>
+              ))}
+              <h3 style={{fontSize:13,fontWeight:700,color:C.primary,marginTop:22,marginBottom:6}}>利用について</h3>
+              <p style={{fontSize:13}}>要介護・要支援認定を受けている方は、自己負担割合（1〜3割）に応じて介護保険給付を受けることが可能です。<strong>償還払い方式のみ</strong>対応。</p>
+              <h3 style={{fontSize:13,fontWeight:700,color:C.primary,marginTop:22,marginBottom:6}}>償還払いとは</h3>
+              <p style={{fontSize:13}}>商品代金を全額お支払い後、市町村へ申請することで自己負担分を除いた金額が払い戻されます。</p>
+              <div style={{background:"#FFF8F0",borderRadius:10,padding:"14px 16px",marginTop:20,borderLeft:`3px solid ${C.accent}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4}}>注意事項</div>
+                <p style={{margin:0,fontSize:12}}>適用可否は市町村が判断します。給付対象外の場合も当事業所では責任を負いかねます。</p>
+              </div>
+            </div>
+          )}
+          {tab==="support"&&(
+            <div>
+              <h2 style={{fontSize:17,fontWeight:700,color:C.dark,marginBottom:16}}>サポート窓口</h2>
+              <div style={{background:C.primaryBg,borderRadius:12,padding:"20px",marginBottom:20,textAlign:"center"}}>
+                <div style={{fontSize:14,fontWeight:700,color:C.dark,marginBottom:4}}>みなともmade</div>
+                <a href="tel:0567558253" style={{fontSize:24,fontWeight:800,color:C.primary,textDecoration:"none",display:"block",marginBottom:6}}>📞 0567-55-8253</a>
+                <div style={{fontSize:12,color:C.textLight}}>平日 9:00〜17:00</div>
+              </div>
+              <h3 style={{fontSize:13,fontWeight:700,color:C.primary,marginTop:20,marginBottom:6}}>対応内容</h3>
+              <p style={{fontSize:13}}>不具合相談、製品保証受付、クレーム一次対応、交換判断、メーカー調査依頼、使用方法相談。</p>
+              <h3 style={{fontSize:13,fontWeight:700,color:C.primary,marginTop:20,marginBottom:6}}>保証・交換</h3>
+              <p style={{fontSize:13}}>メーカー保証のみ。不具合時は原則交換対応。返金は原則不可。介護保険利用購入品も同様。</p>
+            </div>
+          )}
+          {tab==="safety"&&(
+            <div>
+              <h2 style={{fontSize:17,fontWeight:700,color:C.dark,marginBottom:16}}>安全なご使用のために</h2>
+              <p style={{fontSize:13}}>取扱説明書・専門職の指導に従ってご使用ください。改造や用途外使用は保証対象外です。</p>
+              <h3 style={{fontSize:13,fontWeight:700,color:C.primary,marginTop:20,marginBottom:6}}>事故発生時</h3>
+              <p style={{fontSize:13}}>速やかにサポート窓口へご連絡ください。<strong>破損した製品・部品は廃棄せず保管</strong>をお願いします。</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══ Main ══
+function App(){
+  const [page,setPage]=useState(0);
+  const goTo=p=>{setPage(p);window.scrollTo(0,0);};
+  return (
+    <div>
+      {page===0&&<LandingPage goTo={goTo}/>}
+      {page===1&&<ProductList goTo={goTo}/>}
+      {page===2&&<AIRecommend goTo={goTo}/>}
+      {page===3&&<InfoPage/>}
+      <BottomNav page={page} goTo={goTo}/>
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+</body>
+</html>
